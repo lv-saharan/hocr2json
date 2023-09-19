@@ -1,0 +1,24 @@
+{
+  "name": "hocr2json",
+  "version": "1.0.0",
+  "description": "convert hocr to json",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "npm run test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lv-saharan/hocr2json.git"
+  },
+  "keywords": [
+    "hocr",
+    "json"
+  ],
+  "author": "lv-saharan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lv-saharan/hocr2json/issues"
+  },
+  "homepage": "https://github.com/lv-saharan/hocr2json#readme"
+}
