@@ -5,14 +5,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        html {
+            font-family: sans-serif;
+            font-size: 62.5%;
+        }
+
+        .ocr-word {
+            text-align: justify;
+            color: red;
+            /* color: transparent; */
+
+            line-height: 1;
+            cursor: text;
+            forced-color-adjust: none;
+        }
+
+        #container {
+            width: 1000px;
+            margin: 0 auto;
+            background-color: #ccc;
+        }
+
+        .ocr-page {
+            border: solid 1px #ccc;
+            box-sizing: border-box;
+            margin: 20px 0;
+            background-color: white;
+            background-size: contain;
+        }
+
+        .ocr-line .word {
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .ocr-line {
+            /* opacity: .2; */
+
+        }
+    </style>
 </head>
 
 <body>
+    <!-- <form id="searchForm">
+        <input type="search">
+
+    </form> -->
+    <div id="container"></div>
     <script type="module">
+        // const searchForm = document.querySelector("#searchForm")
+        // searchForm.addEventListener("submit", evt => {
+        //     evt.preventDefault()
+
+        // })
         import { toJSON } from "../src/index.js"
-        const hocr= await fetch("./1.hocr").then(r=>r.text());
-        const json=toJSON(hocr);
+
+        const container = document.querySelector("#container")
+
+        const hocr = await fetch(`./ocrs/pdf.hocr`).then(r => r.text());
+        const json = toJSON(hocr);
         console.log(json)
+        createPages(json)
+
+        function createElement(props) {
+            const ocrEle = document.createElement("div")
+            ocrEle.style.width = `calc(var(--scale-factor)*${(props.width)}px)`
+            ocrEle.style.height = `calc(var(--scale-factor)*${(props.height)}px)`
+            if (props.hasOwnProperty("left")) {
+                ocrEle.style.position = "absolute"
+                ocrEle.style.left = `calc(var(--scale-factor)*${props.left}px)`
+                ocrEle.style.top = `calc(var(--scale-factor)*${props.top}px)`
+            } else {
+                ocrEle.style.position = "relative"
+            }
+            return ocrEle;
+        }
+
+        function createPages(json, index) {
+
+            for (let page of json.pages) {
+
+                const scale = container.clientWidth / (page.width);
+
+                const ocrPage = createElement(page)
+                container.append(ocrPage)
+                ocrPage.classList.add("ocr-page");
+                ocrPage.style.setProperty("--scale-factor", scale)
+                ocrPage.dataset.pageNo = page.ppageno;
+                ocrPage.style.backgroundImage = `url(./ocrs/${page.ppageno + 1}.png)`
+
+                for (let area of page.areas) {
+                    area.left = area.x1;
+                    area.top = area.y1;
+                    const ocrArea = createElement(area)
+                    ocrPage.append(ocrArea)
+                    ocrArea.classList.add("ocr-area");
+
+                    for (let par of area.pars) {
+                        par.left = par.x1 - area.x1;
+                        par.top = par.y1 - area.y1;
+                        const ocrPar = createElement(par)
+                        ocrArea.append(ocrPar)
+                        ocrPar.classList.add("ocr-par");
+
+                        for (let line of par.lines) {
+                            line.left = line.x1 - par.x1;
+                            line.top = line.y1 - par.y1;
+                            const ocrLine = createElement(line)
+                            ocrPar.append(ocrLine)
+                            ocrLine.classList.add("ocr-line");
+                            //基线处理
+                            ocrLine.style.transform = `translate(calc(var(--scale-factor)*${line.baseline.x}px),calc(var(--scale-factor)*${line.baseline.y}px))`;
+                            //旋转处理
+                            //bbox 是个旋转了的举行
+                            for (let word of line.words) {
+                                word.left = word.x1 - line.x1;
+                                word.top = word.y1 - line.y1;
+                                const ocrWord = createElement(word, scale)
+                                ocrLine.append(ocrWord)
+                                ocrWord.classList.add("ocr-word");
+
+                                const span = document.createElement("span");
+                                span.classList.add("word");
+                                span.textContent = word.text;
+                                ocrWord.append(span)
+
+                                //span.style.fontSize = `${(word.y2 - word.y1) * scale}px`
+                                span.style.fontSize = `${(line.x_size) * scale}px`
+                                span.style.transform = `scale(${(word.width) * scale / span.clientWidth})`
+                                span.style.transformOrigin = "0 0"
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
     </script>
 
 </body>
